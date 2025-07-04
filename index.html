@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Créneaux pour aérer - Calendrier</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { color: darkgreen; text-align: center; }
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+        .day {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+        }
+        .day h2 {
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .highlight {
+            background-color: lightgreen;
+            padding: 3px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .time-slot {
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Meilleurs créneaux pour aérer 🌿</h1>
+    <div class="calendar" id="forecast"></div>
+
+    <script>
+        const apiKey = "483dd7e6ebc84156bac82843250407"; // Remplace par ta clé WeatherAPI
+        const city = "46.5414,6.8497"; // Granges Veveyse (Fribourg)
+        const forecastContainer = document.getElementById('forecast');
+
+        const joursSemaine = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+
+        fetch(`https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${city}&days=14&aqi=no&alerts=no`)
+            .then(response => response.json())
+            .then(data => {
+                data.forecast.forecastday.forEach(day => {
+                    const dateObj = new Date(day.date);
+                    const jour = joursSemaine[dateObj.getDay()];
+                    const dateLisible = `${jour} ${dateObj.getDate()} ${dateObj.toLocaleString('fr-FR', { month: 'long' })} ${dateObj.getFullYear()}`;
+
+                    const hourlyData = day.hour.map(hour => ({
+                        time: hour.time.split(' ')[1],
+                        humidity: hour.humidity,
+                        fullTime: hour.time
+                    }));
+
+                    // Trie par humidité croissante pour trouver les 3 meilleurs créneaux
+                    hourlyData.sort((a, b) => a.humidity - b.humidity);
+                    const bestSlots = hourlyData.slice(0, 3);
+
+                    // Trie les 3 créneaux par heure croissante
+                    bestSlots.sort((a, b) => a.fullTime.localeCompare(b.fullTime));
+
+                    const bestHumidity = bestSlots[0].humidity;
+
+                    const dayDiv = document.createElement('div');
+                    dayDiv.className = 'day';
+                    dayDiv.innerHTML = `<h2>${dateLisible}</h2>`;
+
+                    bestSlots.forEach(slot => {
+                        const p = document.createElement('p');
+                        p.className = 'time-slot';
+                        p.textContent = `🕒 ${slot.time} - ${slot.humidity}%`;
+                        if (slot.humidity === bestHumidity) {
+                            p.classList.add('highlight');
+                        }
+                        dayDiv.appendChild(p);
+                    });
+
+                    forecastContainer.appendChild(dayDiv);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                forecastContainer.innerHTML = "<p>Impossible de récupérer les données météo. Vérifie ta clé API ou ta connexion.</p>";
+            });
+    </script>
+</body>
+</html>
