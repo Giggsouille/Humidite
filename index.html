@@ -66,7 +66,13 @@
                     // Trie les 3 créneaux par heure croissante
                     bestSlots.sort((a, b) => a.fullTime.localeCompare(b.fullTime));
 
-                    const bestHumidity = bestSlots[0].humidity;
+                    // Détermination du taux d'humidité le plus bas
+                    const lowestHumidity = Math.min(...bestSlots.map(slot => slot.humidity));
+
+                    // Trouver le créneau avec le taux d'humidité le plus bas et le plus tôt dans la journée
+                    const bestSlot = bestSlots
+                        .filter(slot => slot.humidity === lowestHumidity)
+                        .sort((a, b) => a.fullTime.localeCompare(b.fullTime))[0];
 
                     const dayDiv = document.createElement('div');
                     dayDiv.className = 'day';
@@ -76,7 +82,7 @@
                         const p = document.createElement('p');
                         p.className = 'time-slot';
                         p.textContent = `🕒 ${slot.time} - ${slot.humidity}%`;
-                        if (slot.humidity === bestHumidity) {
+                        if (slot.fullTime === bestSlot.fullTime) {
                             p.classList.add('highlight');
                         }
                         dayDiv.appendChild(p);
